@@ -1,0 +1,366 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <title>IPN and ReturnURL Validation Java Library</title>
+  <style type="text/css">
+    body, div, p, td, th {
+      font-family : helvetica,sans-serif, arial;
+      font-size : 12px;
+      color : #000000;
+    }
+
+    .aws-h1, h1{
+      font-family: verdana, arial, helvetica, sans-serif;
+      font-size: 18px;
+      font-weight: bold;
+      color: #000000;
+    }
+    .aws-h2, h2{
+      font-family: verdana, arial, helvetica, sans-serif;
+      font-size: 14px;
+      color: #c60;
+    }
+    .aws-h3, h3{
+      font-family: verdana, arial, helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      color: #333333;
+    }
+
+    /*table ID selector styles*/
+    #aws-table {
+      border-top: 1px solid #cccccc;
+      border-left: 1px solid #cccccc;
+      width:95%;
+    }
+
+    #aws-table td{
+      font-size: 12px;
+      padding: 5px 5px 5px 5px;
+      border-bottom: 1px solid #cccccc;
+      border-right: 1px solid #cccccc;
+      vertical-align:top;
+    }
+
+    #aws-table th {
+      font-size: 12px;
+      padding: 5px 5px 5px 5px;
+      border-bottom: 1px solid #cccccc;
+      border-right: 1px solid #cccccc;
+      vertical-align:top;
+      background-color: #eeeeee;
+      color: #333333;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    /*code, note, and example styles*/
+    pre {
+      font-family: "Courier New", Courier, mono;
+      font-size: 12px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      color: #000066;
+      padding: 5px;
+      background-color: #eff7ff;
+      border: 1px dashed #333;
+      width:75%;
+      display:block;
+    }
+
+  </style>
+</head>
+<body>
+<h2>Introduction:</h2>
+<p>Amazon FPS sends you outbound notifications in the form of GET and POST on your ReturnURL and IPN endpoints respectively. When you handle these notifications, we recommend you to validate the Signature to ensure that the notification actually originated from us. Signature V2 provides two ways to validate this signature.</p>
+<ol>
+  <li><strong>Server-side validation using VerifySignature API call</strong>: Send the entire URL including the HTTP parameters received to FPS VerifySignature API and it will return a Boolean that indicates whether the signature was validated or not. This method is the one we <strong>recommend</strong> for Amazon FPS as it helps you to quickly integrate with our service. Samples for this method is packaged in the folder src/com/amazonaws/fps/samples. The section &quot;Using VerifySignature API&quot; below describes the steps.<br />
+  </li>
+  <li><strong>Client-side validation using PKI based algorithm</strong>: This package includes files that implement this algorithm. If you are not willing to make an API call to verify the signature, you can follow the steps under &quot;Using PKI algorithm&quot; to implement signature verification on your end.</li>
+</ol>
+
+<h2>Package Content</h2>
+
+<table id="aws-table">
+
+  <tbody>
+    <tr>
+      <th>Directory</th>
+      <th>Overview</th>
+    </tr>
+	<tr>
+      <td>
+        src/com/amazonaws/fps
+      </td>
+      <td>
+        All sources including code samples that demonstrate <b>server-side</b> validation of ipn and return url notifications.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        src/com/amazonaws/ipnreturnurlvalidation
+      </td>
+      <td>
+        All sources including code samples that demonstrate <b>client-side</b> validation of ipn and return url notifications.
+      </td>
+    </tr>
+  </tbody>
+
+</table>
+
+<section>
+<h2>Using VerifySignature API</h2>
+<h3 id=verifysignatureapiforreturnurl>Steps to validate Return URL notifications using VerifySignature API</h3>
+<ul>
+        <li> Open VerifySignatureSample.java in src/com/amazonaws/fps/samples </li>
+        <li> Set request parameters. For example, find following pre-generated snippet:</li>
+        <pre>
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+// @TODO: set request parameters here
+// invokeVerifySignature(service, fpsRequest);
+        </pre>
+        <li>Uncomment third line and set VerifySignature request parameters</li>
+        <pre>
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+fpsRequest.setUrlEndPoint("YourReturnUrl");
+fpsRequest.setHttpParameters("QueryStringFromTheReturnUrl");
+        </pre>
+		<li>Input parameters in the above request can be generated as follows</li>
+		<pre>
+Return URL : http://www.mysite.com/call_pay.jsp
+Parameters sent by FPS in ReturnUrl (using HTTP GET):
+	expiry = 10/2013
+	token = IDQ5IG5ETFCEBU8KBLTI4JHINQVL6VAJVHICBRR49AKLPIEZH1KB1S8C7VHAJJMLJ3
+	status = SC
+	callerReference = 1253247023946cMcrTRrjtLjNrZGNKchWfDtUEIGuJfiOBAAJYPjbytBV
+	signatureMethod = RSA-SHA1
+	signatureVersion = 2
+	certificateUrl = https://fps.amazonaws.com/certs/090909/PKICert.pem
+	signature = H4NTAsp3YwAEiyQ86j5B53lksv2hwwEaEFxtdWFpy9xX764AZy/Dm0RLEykUUyPV
+	LgqCOlMopay5Qxr/VDwhdYAzgQzA8VCV8x9Mn0caKsJT2HCU6tSLNa6bLwzg/ildCm2lHDho1Xt2
+	yaBHMt+/Cn4qI5B+6PDrb8csuAWxW/mbUhk7AzazZMfQciJNjS5k+INlcvOOtQqoA/gVeBLsXK5j
+	NsTh09cNa7pbgAvey+0DEjYnIRX+beJV6EMCPZxnXDGo0fA1PENLWXIHtAoIJAfLYEkVbT2lva2t
+	Z0KBBWENnSjf26lMZVokypIo4huoGaZMp1IVkImFi3qC6ipCrw==
+
+The above code snippet will look like:
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+fpsRequest.setUrlEndPoint("http://www.mysite.com/call_pay.jsp");
+fpsRequest.setHttpParameters("tokenID=Q5IG5ETFCEBU8KBLTI4JHINQVL6VAJVHICBRR49AKLPIEZH1KB1S8C7VHAJJMLJ3&signatureMethod=RSA-SHA1&
+status=SC&signatureVersion=2&certificateUrl=https%3A%2F%2Ffps.amazonaws.com%2Fcerts%2F090909%2FPKICert.pem&signature=H4NTAsp3YwA
+EiyQ86j5B53lksv2hwwEaEFxtdWFpy9xX764AZy%2FDm0RLEykUUyPVLgqCOlMopay5Qxr%2FVDwhdYAzgQzA8VCV8x9Mn0caKsJT2HCU6tSLNa6bLwzg%2FildCm2lH
+Dho1Xt2yaBHMt%2B%2FCn4qI5B%2B6PDrb8csuAWxW%2FmbUhk7AzazZMfQciJNjS5k%2BINlcvOOtQqoA%2FgVeBLsXK5jNsTh09cNa7pbgAvey%2B0DEjYnIRX%2Bb
+eJV6EMCPZxnXDGo0fA1PENLWXIHtAoIJAfLYEkVbT2lva2tZ0KBBWENnSjf26lMZVokypIo4huoGaZMp1IVkImFi3qC6ipCrw%3D%3D&callerReference=12532470
+23946cMcrTRrjtLjNrZGNKchWfDtUEIGuJfiOBAAJYPjbytBV&expiry=10%2F2013");
+
+Note: If your return url contains query string like http://www.mysite.com/call_pay.jsp?a=b&c=d, concat
+&URLEncode(a)=URLEncode(b)&URLEncode(c)=URLEncode(d) to the HttpParameters input.
+		</pre>
+		<li>run sample. You should see the output similar to the following</li>
+		<pre>
+VerifySignatureResponse
+	VerifySignatureResult
+		VerificationStatus
+			Success
+	ResponseMetadata
+		RequestId
+			197e2085-1ed7-47a2-93d8-d76b452acc74:0
+		</pre>
+    </ul>
+
+<h3 id=verifysignatureapiforipn>Steps to validate IPN posts using VerifySignature API call</h3>
+<ul>
+  <li> Open VerifySignatureSample.java in src/com/amazonaws/fps/samples </li>
+  <li> Set request parameters. For example, find following pre-generated snippet:</li>
+  <pre>
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+// @TODO: set request parameters here
+// invokeVerifySignature(service, fpsRequest);
+        </pre>
+  <li>Uncomment third line and set VerifySignature request parameters</li>
+  <pre>
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+fpsRequest.setUrlEndPoint(&quot;YourIPNUrl&quot;);
+fpsRequest.setHttpParameters(&quot;QueryStringFromTheIPNUrl&quot;);
+        </pre>
+  <li>Input parameters in the above request can be generated as follows</li>
+  <pre>
+IPN URL : http://www.mysite.com/ipn.jsp
+Parameters sent by FPS in IPN (using HTTP POST):
+	transactionId: 14DRG2JGR7LK4J54P544DKKNDLQFFZLE323
+	transactionDate: 1251832057
+	status = INITIATED
+	notificationType = TransactionStatus
+	callerReference = callerReference=ReferenceStringJYI1251832057319108
+	operation = PAY
+	transactionAmount = USD 1.00
+	buyerName = BuyerName-SsUo3oDjHx
+	paymentMethod = CC
+	paymentReason = DescriptionString-1251832057319108
+	recipientEmail = recipientemail@amazon.com
+	signatureVersion = 2
+	signatureMethod = RSA-SHA1
+	certificateUrl = https://fps.amazonaws.com/certs/090909/PKICert.pem
+	signature = vKXXCbtxvSkRR+Zn8YNW6DNGpbi474h2iM4L+xaOi16kYKdYpuGbvKyXQ36uTZTVHdUGAAcvpXFL
+	wDfnTcqcckr2IUElrVJKQeT0WeWR+IqmABwSRGo+YqjzPNISSNXNzg6LFhouhUvmmwY15X3YgXfcERN5IhPwv04Y
+	kyCLPCA9P0/QgD8Jum/hc9jj0HYjj3s3MuuQ3yoIhf2x+2CBZRm5lslRqnoF/8OJ1ZHmAHt9VvQSZ+QC3fwJgeqz
+	JPAvtuOm930BP6hPYZVhXE5w7ByLt0qLk1ZFE/vzQ4io4vOyie6Wbhp5+AuNyAs+QrGMYO8VZruZJfkZO4b6QOgV2A==
+
+The above code snippet will look like:
+VerifySignatureRequest fpsRequest = new VerifySignatureRequest();
+fpsRequest.setUrlEndPoint("http://www.mysite.com/ipn.jsp");
+fpsRequest.setHttpParameters("paymentReason=DescriptionString-1251832057319108&transactionAmount=USD+1.00&
+signatureMethod=RSA-SHA1&transactionId=14DRG2JGR7LK4J54P544DKKNDLQFFZLE323&status=INITIATED&recipientEmail
+=recipientemail%40amazon.com&transactionDate=1251832057&buyerName=BuyerName-SsUo3oDjHx&operation=PAY&notif
+icationType=TransactionStatus&signatureVersion=2&certificateUrl=https%3A%2F%2Ffps.amazonaws.com%2Fcerts%2F
+090909%2FPKICert.pem&paymentMethod=CC&signature=vKXXCbtxvSkRR%2BZn8YNW6DNGpbi474h2iM4L%2BxaOi16kYKdYpuGbvK
+yXQ36uTZTVHdUGAAcvpXFLwDfnTcqcckr2IUElrVJKQeT0WeWR%2BIqmABwSRGo%2BYqjzPNISSNXNzg6LFhouhUvmmwY15X3YgXfcERN5
+IhPwv04YkyCLPCA9P0%2FQgD8Jum%2Fhc9jj0HYjj3s3MuuQ3yoIhf2x%2B2CBZRm5lslRqnoF%2F8OJ1ZHmAHt9VvQSZ%2BQC3fwJgeqz
+JPAvtuOm930BP6hPYZVhXE5w7ByLt0qLk1ZFE%2FvzQ4io4vOyie6Wbhp5%2BAuNyAs%2BQrGMYO8VZruZJfkZO4b6QOgV2A%3D%3D&cal
+lerReference=callerReference%3DReferenceStringJYI1251832057319108");
+
+Note: If your ipn url contains query string like http://www.mysite.com/ipn.jsp?a=b&c=d, concat
+&URLEncode(a)=URLEncode(b)&URLEncode(c)=URLEncode(d) to the HttpParameters input.
+  </pre>
+  <li>run sample. You should see the output similar to the following</li>
+  <pre>
+VerifySignatureResponse
+	VerifySignatureResult
+		VerificationStatus
+			Success
+	ResponseMetadata
+		RequestId
+			197e2085-1ed7-47a2-93d8-d76b452acc74:0
+		</pre>
+</ul>
+Summary of the steps to use VerifySignature action for Return URL and IPN:
+<table border="1" cellspacing="0" cellpadding="0" width="606">
+  <tr>
+    <td width="24"><p>1</p></td>
+    <td width="582"><p>Capture the notification on on    your IPN endpoint</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>2</p></td>
+    <td width="582"><p>Construct VerifySignature request    by specifying either your Return URL or IPN endpoint as &ldquo;UrlEndpoint&rdquo; and the concatenated string    of HTTP parameters as &ldquo;HttpParameters&rdquo; [&lsquo;=&rsquo; used as delimiter between URL    encoded name, URL encoded value and &lsquo;&amp;&rsquo; used as delimiter between each    name, value pair.]</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>3</p></td>
+    <td width="582"><p>Invoke VerifySignature request    against Sandbox or Production endpoint as applicable</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>4</p></td>
+    <td width="582"><p>Capture the XML response and decide    whether to process the IPN notification or discard it based on the value of    &ldquo;VerificationStatus&rdquo; boolean.</p></td>
+  </tr>
+</table>
+<h2>Using PKI Algorithm</h2>
+<h3 id=pkiforreturnurl>Steps to validate Return URL notifications using PKI algorithm (client-side)</h3>
+       <ol type="i">
+            <li> Go to src/com/amazonaws/ipnreturnurlvalidation/samples directory and open ReturnUrlVerificationSampleCode.java </li>
+            <li>In function <tt>main</tt>, replace/add the parameters you received at your return url and also update urlEndPoint to your return url end point.
+                <tt><pre>
+Map<String, String> params = new HashMap<String, String>();
+
+//Parameters present in return url.
+params.put("expiry", "10/2013");
+params.put("tokenID", "Q5IG5ETFCEBU8KBLTI4JHINQVL6VAJVHICBRR49AKLPIEZH1KB1S8C7VHAJJMLJ3");
+params.put("status", "SC");
+params.put("callerReference", "1253247023946cMcrTRrjtLjNrZGNKchWfDtUEIGuJfiOBAAJYPjbytBV");
+params.put("signatureMethod", "RSA-SHA1");
+params.put("signatureVersion", "2");
+params.put("certificateUrl", "https://fps.amazonaws.com/certs/090909/PKICert.pem");
+params.put("signature", "H4NTAsp3YwAEiyQ86j5B53lksv2hwwEaEFxtdWFpy9xX764AZy/Dm0RLEykUUyPVLgqCOlMopay5
+			+ "Qxr/VDwhdYAzgQzA8VCV8x9Mn0caKsJT2HCU6tSLNa6bLwzg/ildCm2lHDho1Xt2yaBHMt+/Cn4q"
+			+ "I5B+6PDrb8csuAWxW/mbUhk7AzazZMfQciJNjS5k+INlcvOOtQqoA/gVeBLsXK5jNsTh09cNa7pb"
+			+ "gAvey+0DEjYnIRX+beJV6EMCPZxnXDGo0fA1PENLWXIHtAoIJAfLYEkVbT2lva2tZ0KBBWENnSjf"
+			+ "26lMZVokypIo4huoGaZMp1IVkImFi3qC6ipCrw==");
+
+String urlEndPoint = "http://www.mysite.com/call_pay.jsp"; //Your return url end point.
+System.out.println("Verifying return url signed using signature v2 ....");
+//return url is sent as a http GET request and hence we specify GET as the http method.
+//Signature verification does not require your secret key
+System.out.println("Is signature correct: " + (new SignatureUtilsForOutbound()).validateRequest(params, urlEndPoint, "GET"));
+                </pre></tt>
+            </li>
+            <li>Run the sample as java application.</li>
+            <li>Make sure the signature is valid.</li>
+</ol>
+
+<h3 id=pkiforipn>Steps to validate IPN posts using PKI algorithm (client-side)</h3>
+<ol type="i">
+    <li> Go to src/com/amazonaws/ipnreturnurlvalidation/samples directory and open IpnVerificationSampleCode.java </li>
+    <li>In function <tt>main</tt>, replace/add the parameters that you got in your IPN post. Also, set the urlEndPoint to your IPN end point.
+    <tt><pre>
+Map<String, String> params = new HashMap<String, String>();
+
+//Parameters present in ipn.
+params.put("transactionId", "14DRG2JGR7LK4J54P544DKKNDLQFFZLE323");
+params.put("transactionDate", "1251832057");
+params.put("status", "INITIATED");
+params.put("notificationType", "TransactionStatus");
+params.put("callerReference", "callerReference=ReferenceStringJYI1251832057319108");
+params.put("operation", "PAY");
+params.put("transactionAmount", "USD 1.00");
+params.put("buyerName", "BuyerName-SsUo3oDjHx");
+params.put("paymentMethod", "CC");
+params.put("paymentReason", "DescriptionString-1251832057319108");
+params.put("recipientEmail", "recipientemail@amazon.com");
+params.put("signature", "VEAAvfPO2F0IGaDGXYemaQQfzkA=");
+params.put("signatureMethod", "RSA-SHA1");
+params.put("signatureVersion", "2");
+params.put("certificateUrl", "https://fps.amazonaws.com/certs/090909/PKICert.pem");
+params.put("signature", "vKXXCbtxvSkRR+Zn8YNW6DNGpbi474h2iM4L+xaOi16kYKdYpuGbvKyXQ36uTZTVHdUGAAcvpXFL"
+			+ "wDfnTcqcckr2IUElrVJKQeT0WeWR+IqmABwSRGo+YqjzPNISSNXNzg6LFhouhUvmmwY15X3YgXfc"
+			+ "ERN5IhPwv04YkyCLPCA9P0/QgD8Jum/hc9jj0HYjj3s3MuuQ3yoIhf2x+2CBZRm5lslRqnoF/8OJ"
+			+ "1ZHmAHt9VvQSZ+QC3fwJgeqzJPAvtuOm930BP6hPYZVhXE5w7ByLt0qLk1ZFE/vzQ4io4vOyie6W"
+			+ "bhp5+AuNyAs+QrGMYO8VZruZJfkZO4b6QOgV2A==");
+
+String urlEndPoint = "http://www.mysite.com/ipn.jsp"; //Your url end point receiving the ipn.
+System.out.println("Verifying IPN signed using signature v2 ....");
+//IPN is sent as a http POST request and hence we specify POST as the http method.
+//Signature verification does not require your secret key
+System.out.println("Is signature correct: " + (new SignatureUtilsForOutbound()).validateRequest(params, urlEndPoint, "POST"));
+    </pre></tt>
+    </li>
+    <li>Run the sample as java application.</li>
+    <li>Make sure the signature is valid.</li>
+</ol>
+
+<p>Summary of the steps to use PKI algorithm for Return URL and IPN:</p>
+<table border="1" cellspacing="0" cellpadding="0" width="606">
+  <tr>
+    <td width="24"><p>1</p></td>
+    <td width="582"><p>Decode the signature in the    notification.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>2</p></td>
+    <td width="582"><p>Decode    and read the signatureVersion and signatureMethod parameters from the notification.    In the current implementation, signatureVersion value should be 2 and    signatureMethod value should be RSA-SHA1 (format is Algorithm-Digest).</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>3</p></td>
+    <td width="582"><p>Decode and read the    certificateUrl parameter from the notification.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>4</p></td>
+    <td width="582"><p>Check if the certificate    corresponding to the URL was already downloaded and cached.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>5</p></td>
+    <td width="582"><p>If the certificate was not    cached, download the same and cache it.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>6</p></td>
+    <td width="582"><p>Compute the StringToSign using    the V2 algorithm (same as inbound requests) &ndash; StringToSign should include all    the parameters sent in the notification excluding signature.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>7</p></td>
+    <td width="582"><p>Validate the signature using the StringToSign and the  Certificate downloaded. <br />
+      Note: Since the    signature is calculated with FPS private key using PKI based cryptography,    you will require the above parameter values (signature, stringToSign, certificate    and signatureMethod) to validate this signature using language specific    libraries. Look at our code samples for more details on the library support.    Note that libraries in different languages take these inputs in different    formats.</p></td>
+  </tr>
+  <tr>
+    <td width="24"><p>8</p></td>
+    <td width="582"><p>If the signature is verified, the notification is processed. Otherwise, the notification is discarded.</p></td>
+  </tr>
+</table>
+</body>
+</html>
