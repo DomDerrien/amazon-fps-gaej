@@ -20,11 +20,18 @@
  * 
  */
 
+/******************************************************************************* 
+ *  Adapted by Dom Derrien for the Java platform of Google App Engine
+ *  Copyright 2010 Dom Derrien
+ * *****************************************************************************
+ *  Change scope:
+ *  - Update the library name to mention the Google App Engine.
+ */
 
 -->
 <project name="Amazon FPS Java Library" default="dist" basedir=".">
     <description>Auto generated ANT file for building AWS libraries</description>
-    <property name="lib.name" value="amazon-fps-2008-09-17-java-library"/>
+    <property name="lib.name" value="amazon-fps-2008-09-17-java-library-for-gae"/>
     <property name="java.src.dir" value="src"/>
     <property name="build.root" value="build"/>
     <property name="build.dir" value="build/classes"/>

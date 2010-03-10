@@ -19,7 +19,14 @@
  * 
  */
 
-
+/******************************************************************************* 
+ *  Adapted by Dom Derrien for the Java platform of Google App Engine
+ *  Copyright 2010 Dom Derrien
+ * *****************************************************************************
+ *  Change scope:
+ *  - Replace the usage of a MultiThreadedHttpConnectionManager instance by
+ *    a wrapper over Google App Engine UrlFetch instance.
+ */
 
 package com.amazonaws.fps;
 
@@ -43,7 +50,10 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+// Dom Derrien: refactor to accomodate the library to GAE Java environment
+// import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+// import org.apache.commons.httpclient.SimpleHttpConnectionManager;
+import domderrien.wrapper.UrlFetch.UrlFetchConnectionManager;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
 import org.apache.commons.httpclient.params.HttpMethodParams;
@@ -644,7 +654,10 @@ public  class AmazonFPSClient implements AmazonFPS {
         connectionManagerParams.setMaxConnectionsPerHost(hostConfiguration, config.getMaxConnections());
 
         /* Set connection manager */
-        MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+        // Dom Derrien: refactor to accomodate the library to GAE Java environment
+        // MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+        // SimpleHttpConnectionManager connectionManager = new SimpleHttpConnectionManager();
+        UrlFetchConnectionManager connectionManager = new UrlFetchConnectionManager();
         connectionManager.setParams(connectionManagerParams);
 
         /* Set http client */

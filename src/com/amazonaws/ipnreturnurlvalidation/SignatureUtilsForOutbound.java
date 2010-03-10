@@ -19,6 +19,15 @@
  * 
  */
 
+/******************************************************************************* 
+ *  Adapted by Dom Derrien for the Java platform of Google App Engine
+ *  Copyright 2010 Dom Derrien
+ * *****************************************************************************
+ *  Change scope:
+ *  - Replace the call to the static method HttpURLConnection.getFollowRedirects()
+ *    by an one related to a HttpURLConnection instance.
+ */
+
 package com.amazonaws.ipnreturnurlvalidation;
 
 import java.io.BufferedReader;
@@ -320,16 +329,31 @@ public class SignatureUtilsForOutbound {
         String certificate = keyStore.get(certificateUrl);
         if (certificate != null) return certificate;
 
-        //2. If not found in cache, fetch it
-        boolean followRedirects = HttpURLConnection.getFollowRedirects();
-        HttpURLConnection.setFollowRedirects(false);
+        // Dom Derrien: update to not use the static function, forbidden in GAE Java environment
+		//   Cf. http://code.google.com/p/googleappengine/issues/detail?id=1556
+		//   Cf. http://code.google.com/appengine/docs/java/urlfetch/usingjavanet.html#Redirects
         try {
-            certificate = URLReader.getUrlContents(certificateUrl);
-        } catch (IOException e) {
-            throw new SignatureException(e);
-        } finally {
-            HttpURLConnection.setFollowRedirects(followRedirects);
-        }
+	        //2. If not found in cache, fetch it
+	        // boolean followRedirects = HttpURLConnection.getFollowRedirects();
+	        // HttpURLConnection.setFollowRedirects(false);
+			URL url = new URL("http://aws.amazon.com/");
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			boolean followRedirects = connection.getInstanceFollowRedirects();
+			connection.setInstanceFollowRedirects(false);
+	        try {
+	            certificate = URLReader.getUrlContents(certificateUrl);
+	        } catch (IOException e) {
+	            throw new SignatureException(e);
+	        } finally {
+	            HttpURLConnection.setFollowRedirects(followRedirects);
+	        }
+		}
+		catch (MalformedURLException ex) {
+			throw new SignatureException(ex);
+		}
+		catch (IOException ex) {
+			throw new SignatureException(ex);
+		}
         
         //3. populate newly fetched certificate in cache.
         keyStore.put(certificateUrl, certificate);
